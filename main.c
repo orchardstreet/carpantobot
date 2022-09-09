@@ -3,6 +3,7 @@
 
 int main(int argc, char *argv[])
 {
+	char apple[5];
 	printf("hello world\n");
     return 0;
 }
