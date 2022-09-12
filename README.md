@@ -1,4 +1,4 @@
-# An IRC Bot
+# Carpantobot - A Simple IRC Bot
 
 ## To compile and run: 
 
