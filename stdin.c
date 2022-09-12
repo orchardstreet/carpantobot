@@ -30,7 +30,7 @@ signed char quit_prompt(void) {
 	
 	for(;;) {
 		
-		printf("Would you really like to quit? (y/n): \n");
+		printf("Would you really like to quit? (y/n): ");
 		
 		if (fgets(quit_prompt_input,QUIT_PROMPT_RESULT_SIZE - 1,stdin) == NULL) {
 			if(ferror(stdin)) {
