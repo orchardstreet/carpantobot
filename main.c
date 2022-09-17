@@ -33,13 +33,16 @@ signed char ask_user_for_connection_details() {
 	port_string[PORT_SIZE - 1] = 0;
 	
 	do {
-	readline_custom("Enter port of IRC server you want to connect to: ('q' to quit) ",port_string,PORT_SIZE);
+		readline_custom("Enter port of IRC server you want to connect to: ('q' to quit) ",port_string,PORT_SIZE);
 	} while(port_string_to_short(port_string,&(irc_servers[0].port)) != SUCCESS);
 	
 	for(;;) {
-	readline_custom("Enter domain name or IP of IRC server you want to connect to ('q' to quit): ",hostname,HOSTNAME_SIZE);
-	if(validate_hostname(hostname) == SUCCESS)
-		break;
+		readline_custom("Enter domain name or IP of IRC server you want to connect to ('q' to quit): ",hostname,HOSTNAME_SIZE);
+		if((retval = validate_hostname(hostname)) == SUCCESS) {
+			break;
+		} else if (retval == EXIT_PROGRAM) {
+			return EXIT_PROGRAM;
+		}
 	printf("Not a valid hostname, try again\n");
 	}
 	
