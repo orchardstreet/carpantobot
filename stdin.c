@@ -5,12 +5,12 @@
 #include "headers/config.h"
 
 signed char flush_stdin(void) {
-	int charr;
+	int c;
 	for(;;) {
-		charr = getc(stdin);
-		if(charr == '\n') {
+		c = getc(stdin);
+		if(c == '\n') {
 			return CONTINUE;
-		} else if (charr == EOF) {
+		} else if (c == EOF) {
 			return EOF_SEEN;
 		}
 	}
