@@ -11,6 +11,10 @@ unsigned char bot_command_requests_index = 0;
 char quit_prompt_input[QUIT_PROMPT_RESULT_SIZE];
 char yes_no_prompt[YES_NO_PROMPT_SIZE];
 
+void exit_entire_program(int exit_status) {
+		printf("exiting...\n");
+		exit(exit_status);
+}
 int main(int argc, char *argv[])
 {
 	(void)argc;
@@ -36,10 +40,8 @@ int main(int argc, char *argv[])
 		custom_server_name[CUSTOM_SERVER_NAME_SIZE - 1] = 0;
 	}
 	
-	if(ask_user_for_connection_details() == EXIT_PROGRAM)
-		exit(EXIT_SUCCESS);
-	if(connect_to_server() == EXIT_PROGRAM)
-		exit(EXIT_SUCCESS);
+	if(ask_user_for_connection_details(&irc_servers[0]) == EXIT_PROGRAM)
+		exit_entire_program(EXIT_SUCCESS);
 	
 	
 	printf("Exiting...\n");

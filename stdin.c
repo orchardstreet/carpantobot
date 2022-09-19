@@ -1,16 +1,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "headers/stdin.h"
 #include "headers/config.h"
 
+
 signed char flush_stdin(void) {
+	int flags = fcntl(0,F_GETFL);
+	fcntl(0,F_SETFL,flags | O_NONBLOCK);
 	int c;
 	for(;;) {
 		c = getc(stdin);
 		if(c == '\n') {
+			fcntl(0,F_SETFL,flags);
 			return CONTINUE;
 		} else if (c == EOF) {
+			if(isatty(0)) {
+				printf("\n");
+			}
+			fcntl(0,F_SETFL,flags);
 			return EOF_SEEN;
 		}
 	}
@@ -35,16 +45,19 @@ signed char quit_prompt(void) {
 		if (fgets(quit_prompt_input,QUIT_PROMPT_RESULT_SIZE - 1,stdin) == NULL) {
 			if(ferror(stdin)) {
 				perror("");
-				fprintf(stderr,"fgets failure\n");
+				fprintf(stderr,"\nfgets failure\n");
 				return EXIT_PROGRAM; 
 			} else if (feof(stdin)) {
-				printf("detected EOF\n");
+				printf("\ndetected EOF\n");
 				clearerr(stdin);
 				return EXIT_PROGRAM;
 			} else {
-				fprintf(stderr,"unhandled error\n");
+				fprintf(stderr,"\nunhandled error\n");
 				return EXIT_PROGRAM; /* exit */
 			}
+		}
+		if(!isatty(0)) {
+			printf("\n");
 		}
 		
 		/* CHECK FOR OVERFLOW, this should be the first check in this function that doesn't exit entire program (besides EOF check) */
@@ -52,9 +65,9 @@ signed char quit_prompt(void) {
 		fgets_input_length = strlen(quit_prompt_input);
 		if((fgets_input_length == QUIT_PROMPT_RESULT_SIZE - 2) && (quit_prompt_input[QUIT_PROMPT_RESULT_SIZE - 3] != '\n')) {
 			/* flush stdin */
-			printf("Overflow detected, cannot enter more than %d characters\n",QUIT_PROMPT_RESULT_SIZE - 3);
 			retval = flush_stdin();
 			if (retval == CONTINUE) {
+				printf("Cannot enter more than %d characters, try again\n",QUIT_PROMPT_RESULT_SIZE - 3);
 				continue;
 			} else if (retval == EOF_SEEN) {
 				clearerr(stdin);
@@ -66,7 +79,7 @@ signed char quit_prompt(void) {
 		
 		/* If nothing entered, jump to top of function */
 		if(quit_prompt_input[0] == '\n' || *quit_prompt_input == 0) {
-			fprintf(stderr,"Nothing entered, try again");
+			fprintf(stderr,"\nNothing entered, try again\n");
 			continue;
 		}
 		
@@ -111,7 +124,7 @@ signed char readline_custom(char *prompt, char *input, size_t input_size_temp) {
 	
 	for(;;) {
 		
-		printf("%s\n",prompt);
+		printf("%s",prompt);
 		
 		if (input == NULL) {
 			fprintf(stderr,"passed NULL pointer to get_server_info_from_stdin() function\n");
@@ -126,18 +139,21 @@ signed char readline_custom(char *prompt, char *input, size_t input_size_temp) {
 		if (fgets(input,input_size_temp - 1,stdin) == NULL) {
 			if(ferror(stdin)) {
 				perror("");
-				fprintf(stderr,"fgets failure\n");
+				fprintf(stderr,"\nfgets failure\n");
 				return EXIT_PROGRAM; 
 			} else if (feof(stdin)) {
-				printf("detected EOF\n");
+				printf("\ndetected EOF\n");
 				clearerr(stdin);
 				if(quit_prompt() == EXIT_PROGRAM)
 					return EXIT_PROGRAM;
 				continue;
 			} else {
-				fprintf(stderr,"unhandled error\n");
+				fprintf(stderr,"\nunhandled error\n");
 				return EXIT_PROGRAM; /* exit */
 			}
+		}
+		if(!isatty(0)) {
+			printf("\n");
 		}
 		
 		/* CHECK FOR OVERFLOW, this should be the first check in this function that doesn't exit entire program (besides EOF check) */
@@ -145,9 +161,9 @@ signed char readline_custom(char *prompt, char *input, size_t input_size_temp) {
 		fgets_input_length = strlen(input);
 		if((fgets_input_length == input_size_temp - 2) && (input[input_size_temp - 3] != '\n')) {
 			/* flush stdin */
-			printf("Overflow detected, cannot enter more than %d characters\n",QUIT_PROMPT_RESULT_SIZE - 3);
 			retval = flush_stdin();
 			if (retval == CONTINUE) {
+				printf("Cannot enter more than %lu characters, try again\n",input_size_temp - 3);
 				continue;
 			} else if (retval == EOF_SEEN) {
 				clearerr(stdin);
@@ -161,7 +177,7 @@ signed char readline_custom(char *prompt, char *input, size_t input_size_temp) {
 		
 		/* If nothing entered, jump to top of function */
 		if(input[0] == '\n' || *input == 0) {
-			fprintf(stderr,"Nothing entered, try again");
+			fprintf(stderr,"Nothing entered, try again\n");
 			continue;
 		}
 		
@@ -181,7 +197,7 @@ signed char readline_custom(char *prompt, char *input, size_t input_size_temp) {
 		
 		/* Check if special character exists in input, 
 		 * up to null character */
-		for(end_of_input = input + fgets_input_length - 1,browse_input = input;browse_input <= end_of_input;browse_input++) {
+		for(end_of_input = input + fgets_input_length - 2,browse_input = input;browse_input <= end_of_input;browse_input++) {
 			if(*browse_input < ' ' || *browse_input > '~') {
 				special_character_present = 1;
 				break;

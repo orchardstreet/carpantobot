@@ -14,9 +14,7 @@ enum exit_codes {SUCCESS,EXIT_PROGRAM,EOF_SEEN,CONTINUE,FAILURE};
 
 struct irc_server {
 	int sock_fd;
-	char hostname[HOSTNAME_SIZE];
-	char custom_server_name[CUSTOM_SERVER_NAME_SIZE];
-	char IP[50];
+	char hostname[HOSTNAME_SIZE]; char custom_server_name[CUSTOM_SERVER_NAME_SIZE];
 	unsigned short port;
 	char buffer[255];
 	unsigned char buffer_index;
@@ -36,4 +34,5 @@ extern struct bot_command_request bot_command_requests[25];
 extern unsigned char irc_servers_index;
 extern unsigned char bot_command_requests_index;
 extern char quit_prompt_input[QUIT_PROMPT_RESULT_SIZE];
+extern char yes_no_prompt[YES_NO_PROMPT_SIZE];
 #endif
