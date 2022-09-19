@@ -9,8 +9,8 @@
 
 signed char flush_stdin(void) {
 	int flags = fcntl(0,F_GETFL);
-	fcntl(0,F_SETFL,flags | O_NONBLOCK);
 	int c;
+	fcntl(0,F_SETFL,flags | O_NONBLOCK);
 	for(;;) {
 		c = getc(stdin);
 		if(c == '\n') {
@@ -122,19 +122,19 @@ signed char readline_custom(char *prompt, char *input, size_t input_size_temp) {
 	unsigned char special_character_present = 0;
 	signed char retval;
 	
+	if (input == NULL) {
+		fprintf(stderr,"passed NULL pointer to get_server_info_from_stdin() function\n");
+		return EXIT_PROGRAM; /* exit */
+	}
+	
+	if (input_size_temp < 4) {
+		fprintf(stderr,"buffer provided not enough to read into fgets in function get_server_info_from_stdin\n");
+		return EXIT_PROGRAM; /* exit */
+	}
+		
 	for(;;) {
 		
 		printf("%s",prompt);
-		
-		if (input == NULL) {
-			fprintf(stderr,"passed NULL pointer to get_server_info_from_stdin() function\n");
-			return EXIT_PROGRAM; /* exit */
-		}
-		
-		if (input_size_temp < 4) {
-			fprintf(stderr,"buffer provided not enough to read into fgets in function get_server_info_from_stdin\n");
-			return EXIT_PROGRAM; /* exit */
-		}
 		
 		if (fgets(input,input_size_temp - 1,stdin) == NULL) {
 			if(ferror(stdin)) {
