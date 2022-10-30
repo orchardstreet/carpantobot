@@ -36,6 +36,7 @@ int highest_fd = 10;
 socklen_t unix_socket_len;
 char message_on_unix_socket_buffer[MESSAGE_ON_UNIX_SOCKET_BUFFER_SIZE];
 char message_from_unix_socket_buffer[MESSAGE_FROM_UNIX_SOCKET_BUFFER_SIZE];
+unsigned char log_mode;
 
 void exit_entire_program(int exit_status) {
 		printf("exiting...\n");
@@ -63,6 +64,13 @@ int main(int argc, char *argv[])
 	
 	/* Welcome message */
 	printf("Carpantobot 0.1\n\n");
+	
+	/* Get log mode */
+	if(is_in_args(argc,argv,"-v") == SUCCESS) { 
+		log_mode = VERBOSE;
+	} else {
+		log_mode = NORMAL;
+	}
 	
 	/* Check which program mode we are in */
 	if ((retval1 = is_in_client_mode()) == TRUE) {

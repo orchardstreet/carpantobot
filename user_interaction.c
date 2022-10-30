@@ -1,9 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include "headers/config.h"
 #include "headers/stdin.h"
 #include "headers/network.h"
+
+void verbose_printf(char* message,...)
+{
+	if(log_mode == VERBOSE) {
+		va_list args;
+		va_start(args,message);
+		vprintf(message,args);
+		va_end(args);
+	}
+}
 
 signed char ask_user_for_connection_details(struct irc_server *server_tmp) {
 	/* declare local variables */

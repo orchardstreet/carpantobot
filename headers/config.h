@@ -20,6 +20,7 @@
 
 enum exit_codes {SUCCESS,EXIT_PROGRAM,EOF_SEEN,CONTINUE,FAILURE,TRUE,FALSE, UNFINISHED_MESSAGE, FINISHED_MESSAGE, CONNECTION_CLOSED, NO_MESSAGE};
 enum modes {TERMINAL_MODE,DAEMON_MODE,CLIENT_MODE};
+enum output_modes {NORMAL,VERBOSE,O_DEBUG};
 
 struct irc_server {
 	int sock_fd;
@@ -56,4 +57,5 @@ extern socklen_t unix_socket_len;
 extern char message_on_unix_socket_buffer[MESSAGE_ON_UNIX_SOCKET_BUFFER_SIZE];
 extern int message_on_unix_socket_buffer_index;
 extern char message_from_unix_socket_buffer[MESSAGE_FROM_UNIX_SOCKET_BUFFER_SIZE];
+extern unsigned char log_mode;
 #endif

@@ -13,6 +13,7 @@
 #include <netinet/in.h>
 #include "headers/startup.h"
 #include "headers/config.h"
+#include "headers/user_interaction.h"
 
 signed char is_in_args(int number_of_args,char **args,char *argument) {
 	
@@ -32,34 +33,41 @@ signed char is_in_args(int number_of_args,char **args,char *argument) {
 
 signed char is_in_client_mode(void) {
 	/* create a unix socket, try to connect to the socket, send a message to see if awake, if not awake then exit entire program */
-#ifdef DEBUG
-	printf("Creating UNIX socket...\n");
-#endif
+	verbose_printf("Testing CLIENT_MODE\n");
+	verbose_printf("Creating UNIX socket...\n");
 	if((unix_socket = socket(AF_UNIX,SOCK_STREAM,0)) == -1) {
 		fprintf(stderr,"Error opening socket, exiting...\n");
 		return EXIT_PROGRAM;
 	}
+	verbose_printf("UNIX socket successfully created\n");
+	unix_socket_connected = 1;
+	
 	memset(&unix_socket_address,0,sizeof(unix_socket_address));
 	unix_socket_address.sun_family = AF_UNIX;
+	
 	if(sizeof(UNIX_SOCKET_PATH) > sizeof(unix_socket_address.sun_path)) {
 		fprintf(stderr,"Length of UNIX_SOCKET_PATH: %zu exceeds the length of sun_path: %zu bytes."
 		"Cannot store UNIX_SOCKET_PATH, exiting...\n",sizeof(UNIX_SOCKET_PATH),sizeof(unix_socket_address.sun_path));
-		exit(EXIT_FAILURE);
+		close(unix_socket);
+		unix_socket_connected = 0;
+		return EXIT_PROGRAM;
 	}
+	
 	memcpy(unix_socket_address.sun_path,UNIX_SOCKET_PATH,sizeof(UNIX_SOCKET_PATH)); /* path is /tmp/carpantobot.sock by default */
 	if(connect(unix_socket,(struct sockaddr *)&unix_socket_address,sizeof(struct sockaddr_un)) == -1) {
-		if(errno == EFAULT || errno == EINTR) {
-			fprintf(stderr,"fatal error while trying to connect to Unix socket to determine if in client mode\n");
+		verbose_printf("Connect() cannot find a listening carpantobot daemon: %d\n",errno);
+		if(errno == EAFNOSUPPORT || errno == EACCES || errno == EADDRINUSE || errno == EADDRNOTAVAIL || errno == EBADF || errno == EFAULT || errno == EINTR || errno == EISCONN || errno == ENETUNREACH || errno == ENOTSOCK || errno == EPROTOTYPE) {
+			fprintf(stderr,"Fatal error while trying to connect to Unix socket to determine if in client mode\n");
+			close(unix_socket);
+			unix_socket_connected = 0;
 			return EXIT_PROGRAM;
 		} else {
-#ifdef DEBUG
-			printf("Couldn't connect to UNIX_SOCKET_PATH, therefore not in client mode, going to try daemon mode\n");
-#endif
+			verbose_printf("Couldn't launch in CLIENT_MODE\nGoing to try DAEMON_MODE\n");
 			return FALSE;
 		}
 	}
 	
-	unix_socket_connected = 1;
+	verbose_printf("We are in CLIENT_MODE\n");
 	return TRUE;
 }
 
@@ -68,16 +76,16 @@ signed char is_in_daemon_mode(int number_of_args, char **args) {
 	int lock_fd;
 	int retval;
 
-/*	
+verbose_printf("Testing DAEMON_MODE\n");
 if (is_in_args(number_of_args,args,"-d") == FAILURE) {
-#ifdef DEBUG
-	printf("Not in daemon mode, closing unix socket\n");
-#endif
+	verbose_printf("DAEMON_MODE not specified in program startup (to do so use \"-d\" as a startup option)\n");
+	verbose_printf("Closing UNIX socket\n");
 	close(unix_socket);
 	unix_socket_connected = 0;
+	verbose_printf("Going to try TERMINAL_MODE\n");
 	return FALSE;
 }
-*/
+
 lock_fd = open(UNIX_SOCKET_LOCK_PATH,O_RDONLY|O_CREAT,0600);
 if(lock_fd == -1) {
 	fprintf(stderr,"Couldn't create or open lock file for unix socket connection daemon\n");
@@ -97,9 +105,7 @@ if(retval) {
 unlink(UNIX_SOCKET_PATH);
 
 /* Check lock file and then unlink previous UNIX socket file, should it exist */
-#ifdef DEBUG
-printf("Binding main unix socket for unix socket server in DAEMON MODE\n");
-#endif
+verbose_printf("Binding unix socket for DAEMON MODE server\n");
 if(bind(unix_socket,(struct sockaddr *)&unix_socket_address,sizeof(struct sockaddr_un)) == -1) {
 	fprintf(stderr,"Couldn't bind to socket in daemon mode, exiting program...\n");
 	close(unix_socket);
@@ -109,9 +115,7 @@ if(bind(unix_socket,(struct sockaddr *)&unix_socket_address,sizeof(struct sockad
 
 unix_socket_connected = 1;
 
-#ifdef DEBUG
-printf("Listening to main unix socket for connection\n");
-#endif
+verbose_printf("Listening to unix socket for connections\n");
 if(listen(unix_socket,3) == -1) {
 	close(unix_socket);
 	unix_socket_connected = 0;
@@ -121,18 +125,16 @@ if(listen(unix_socket,3) == -1) {
 
 FD_SET(unix_socket,&connections);
 
+verbose_printf("We are in DAEMON_MODE\n");
 return TRUE;
 }
 
 signed char is_in_terminal_mode(void) {
+	verbose_printf("Trying to launch in TERMINAL_MODE\n");
 	if(isatty(0) && isatty(1)) {
-#ifdef DEBUG
-		printf("We are in terminal mode\n");
-#endif
+		verbose_printf("We are in TERMINAL_MODE\n");
 		return TRUE;
 	}
-#ifdef DEBUG
-	printf("Not in terminal mode\n");
-#endif
+	verbose_printf("Couldn't open program in TERMINAL_MODE, not using a proper terminal\n");
 	return FALSE;
 }
