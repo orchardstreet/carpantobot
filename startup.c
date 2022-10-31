@@ -116,7 +116,7 @@ if(bind(unix_socket,(struct sockaddr *)&unix_socket_address,sizeof(struct sockad
 unix_socket_connected = 1;
 
 verbose_printf("Listening to unix socket for connections\n");
-if(listen(unix_socket,3) == -1) {
+if(listen(unix_socket,1) == -1) {
 	close(unix_socket);
 	unix_socket_connected = 0;
 	fprintf(stderr,"Error while trying to listen to unix socket while in daemon mode\n");

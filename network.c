@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include "headers/config.h"
 #include "headers/network.h"
+#include "headers/user_interaction.h"
 
 signed char connect_to_server(char *hostname_tmp) {
 	/* call getaddrinfo(), prints failure and returns error if we cannot get an IP */
@@ -42,6 +43,7 @@ void sort_int_array(int *array_ptr,int array_index) {
 }
 
 signed char handle_unix_socket_connection(void) {
+	int dummy_connection;
 	
 	if (!current_unix_socket_connected) {
 		current_unix_socket = accept(unix_socket,(struct sockaddr *)&unix_socket_address,&unix_socket_len);
@@ -54,9 +56,17 @@ signed char handle_unix_socket_connection(void) {
 			FD_SET(current_unix_socket,&connections);
 			current_unix_socket_connected = 1;
 			return SUCCESS;
-		} /* else connection dropped cleanly after select and before accept, do nothing */
-	} else { /* TODO maybe accept connection and throw it away in block below */
-		printf("Unix socket connection client already connected, ignoring connection attempt\n");
+		} else {
+			printf("error in handle_unix_socket_connection() was: %d\n",errno);
+		}/* else connection dropped cleanly after select and before accept, do nothing */
+		message_on_unix_socket_buffer_index = 0; /* wipe message buffer just in case */
+	} else { /* Accept connection, tell it we're full, then throw it away! */
+		dummy_connection = accept(unix_socket,(struct sockaddr *)&unix_socket_address,&unix_socket_len);
+		if(dummy_connection != -1) {
+			write(dummy_connection,"A client is currently connected, disconnecting...\r\n",34);
+			verbose_printf("Discarding extra connection to unix socket after warning them\n");
+			close(dummy_connection);
+		}
 	}
 	return SUCCESS;
 }
@@ -79,6 +89,8 @@ signed char handle_message_on_unix_socket(void) {
 		printf("Unix socket connection client exited properly, closing the connection\n");
 		close(current_unix_socket);
 		current_unix_socket_connected = 0;
+		message_on_unix_socket_buffer_index = 0; /* If a UNIX socket client disconnects, then we discard their 
+		* previous messages*/
 		FD_CLR(current_unix_socket,&connections);
 		return CONNECTION_CLOSED;
 	} else if((retval == -1 && errno != EAGAIN && errno != EWOULDBLOCK) || (retval != -1 && retval <= 0)) {
@@ -91,6 +103,7 @@ signed char handle_message_on_unix_socket(void) {
 	} else if(retval == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
 		fprintf(stderr,"Unix socket connection client dropped connection after it sent a message but before recv(), closing connection\n");
 		close(current_unix_socket);
+		message_on_unix_socket_buffer_index = 0;
 		current_unix_socket_connected = 0;
 		FD_CLR(current_unix_socket,&connections);
 		return CONNECTION_CLOSED;
