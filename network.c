@@ -145,10 +145,12 @@ signed char handle_message_on_unix_socket(void) {
 			return NO_MESSAGE;
 			
 		}
+		return UNFINISHED_MESSAGE;
 	}
 }
 
 signed char parse_message_from_unix_socket()
 {
+				printf("message_from_unix_socket_buffer: %s\n",message_from_unix_socket_buffer);
 	
 }

@@ -83,19 +83,15 @@ int main(int argc, char *argv[])
 		exit_entire_program(EXIT_FAILURE);
 	} else if (is_in_terminal_mode() == TRUE) {
 		program_mode = TERMINAL_MODE;
-	} else {
-		fprintf(stderr,"Can't establish what mode to open program\n");
-		exit_entire_program(EXIT_FAILURE);
-	}
-	
-	if(program_mode == TERMINAL_MODE) {
 		pid = fork();
 		if (pid == -1) {
 			fprintf(stderr,"error with fork\n");
 			exit_entire_program(EXIT_FAILURE);
 		}
+	} else {
+		fprintf(stderr,"Can't establish what mode to open program\n");
+		exit_entire_program(EXIT_FAILURE);
 	}
-	
 	
 	/* daemon multiplexer */
 	if(program_mode == DAEMON_MODE) {
@@ -105,13 +101,9 @@ int main(int argc, char *argv[])
 			set_tmp = connections;
 			
 			/* Call select and check for error */
-#ifdef DEBUG
-			printf("Waiting for connection or message from file descriptors\n");
-#endif
+			verbose_printf("Waiting for connection or message from file descriptors\n");
 			retval1 = select(highest_fd + 1,&set_tmp,NULL,NULL,NULL);
-#ifdef DEBUG
-			printf("Got connection or message\n");
-#endif
+			verbose_printf("Got connection or message\n");
 			if(retval1 == -1) {
 				fprintf(stderr,"error with select\n");
 				exit_entire_program(EXIT_FAILURE);
@@ -127,6 +119,7 @@ int main(int argc, char *argv[])
 			if(current_unix_socket_connected && FD_ISSET(current_unix_socket,&set_tmp)) {
 				if((retval1 = handle_message_on_unix_socket()) == EXIT_PROGRAM) 
 					exit_entire_program(EXIT_FAILURE);
+				printf("message_on_unix_socket_buffer: %s\n",message_on_unix_socket_buffer);
 				if (retval1 == FINISHED_MESSAGE) {
 					parse_message_from_unix_socket();
 				}
